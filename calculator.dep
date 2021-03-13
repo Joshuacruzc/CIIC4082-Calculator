@@ -5,38 +5,23 @@
     <configuration>
         <name>Debug</name>
         <outputs>
-            <file>$TOOLKIT_DIR$\config\linker\lnk430fr6989.xcl</file>
+            <file>$PROJ_DIR$\asm.s43</file>
+            <file>$TOOLKIT_DIR$\config\linker\multiplier32.xcl</file>
             <file>$TOOLKIT_DIR$\inc\msp430fr6989.h</file>
-            <file>$PROJ_DIR$\Debug\List\calculator.map</file>
             <file>$PROJ_DIR$\Debug\Exe\calculator.d43</file>
             <file>$PROJ_DIR$\Debug\Obj\asm.r43</file>
-            <file>$PROJ_DIR$\asm.s43</file>
             <file>$TOOLKIT_DIR$\inc\msp430.h</file>
-            <file>$TOOLKIT_DIR$\config\linker\multiplier32.xcl</file>
+            <file>$PROJ_DIR$\Debug\List\calculator.map</file>
+            <file>$TOOLKIT_DIR$\config\linker\lnk430fr6989.xcl</file>
         </outputs>
         <file>
             <name>[ROOT_NODE]</name>
             <outputs>
                 <tool>
                     <name>XLINK</name>
-                    <file> 3 2</file>
+                    <file> 3 6</file>
                 </tool>
             </outputs>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\Debug\Exe\calculator.d43</name>
-            <outputs>
-                <tool>
-                    <name>XLINK</name>
-                    <file> 2</file>
-                </tool>
-            </outputs>
-            <inputs>
-                <tool>
-                    <name>XLINK</name>
-                    <file> 0 7 4</file>
-                </tool>
-            </inputs>
         </file>
         <file>
             <name>$PROJ_DIR$\asm.s43</name>
@@ -49,7 +34,22 @@
             <inputs>
                 <tool>
                     <name>A430</name>
-                    <file> 6 1</file>
+                    <file> 5 2</file>
+                </tool>
+            </inputs>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\Debug\Exe\calculator.d43</name>
+            <outputs>
+                <tool>
+                    <name>XLINK</name>
+                    <file> 6</file>
+                </tool>
+            </outputs>
+            <inputs>
+                <tool>
+                    <name>XLINK</name>
+                    <file> 7 1 4</file>
                 </tool>
             </inputs>
         </file>

@@ -35,7 +35,20 @@ main:   nop                             ; main program
                                         ; pull-up/pull-down resistors
         bis.b   #00000110B,&P1OUT       ; Set resistors for P1.1 and P1.2 as
                                         ; as pull-down
+        
+        ; Initialize LCD
+        MOV.W   #0xffff,&LCDCPCTL0
+        MOV.W   #0xfc3f,&LCDCPCTL1
+        MOV.W   #0x0fff,&LCDCPCTL2
+        mov.w   #0x041e,&LCDCCTL0
+        mov.w   #0x0208,&LCDCVCTL
+        mov.w   #0x8000,&LCDCCPCTL
+        mov.w   #2,&LCDCMEMCTL
+        bis.w   #1,&LCDCCTL0
+        
+        
         bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on by default
+  
 
 setupCalc:
         mov     #0,R5                   ; Represents the first number the
@@ -166,32 +179,33 @@ operationSelected:
         jmp     setDisplayNumber0
         
 setDisplayNumber0:
-        //Missing code
+        mov.b   #11111100B,&0xA29       ; Display number zero in LCD
         jmp mainLoop
 
 displayAdd:
-        //Add code here
+        mov.b   #00000011B,&0xA29       ; Display the horizontal line for the sum symbol
+        mov.b   #01010000B,&0xA2A       ; Display the vertical line for the sum symbol
         call    #delay                  ; Delay to help combat button bouncing
         call    #stillHoldDown          ; Verify if the user is still holding 
                                         ; down the button
         jmp     mainLoop
         
 displaySub:
-        //Add code here
+        mov.b   #00000011B,&0xA29       ; Display the horizontal line for the minus symbol
         call    #delay                  ; Delay to help combat button bouncing
         call    #stillHoldDown          ; Verify if the user is still holding 
                                         ; down the button
         jmp     mainLoop
 
 displayMul:
-        //Add code here
+        mov.b   #10101010B,&0xA2A       ; Display the cross for the mult. symbol
         call    #delay                  ; Delay to help combat button bouncing
         call    #stillHoldDown          ; Verify if the user is still holding 
                                         ; down the button
         jmp     mainLoop
 
 displayDiv:
-        //Add code here
+        mov.b   #00101000B,&0xA2A       ; Display the diagonal line for the div. symbol
         call    #delay                  ; Delay to help combat button bouncing
         call    #stillHoldDown          ; Verify if the user is still holding 
                                         ; down the button
