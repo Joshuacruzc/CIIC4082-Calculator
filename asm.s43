@@ -238,10 +238,32 @@ doTheMath:
 combineDigits:
         //Combine the first number (R5,R6,R7) and save it in R14
         //Combine the second number (R10,R11,R12) and save it in R15
+firstDigitCombine:      
+        ADD.w   #100, R14       ; This subroutine will add 100 to R14 and decrease R5 by one until R5 is 0
+        dec     R5
+        jnz     firstDigitCombine 
+secondDigitCombine:     
+        ADD.w   #10, R14        ; This subroutine will add 10 to R14 and decrease R6 by one until R6 is 0
+        dec     R6
+        jnz     secondDigitCombine
+thirdDigitCombine:      
+        ADD.w   R7, R14         ; This will add the last digit to R14
+
+firstDigitCombine2:     
+        ADD.w   #100, R15       ; This subroutine will add 100 to R15 and decrease R10 by one until R10 is 0
+        dec     R10
+        jnz     firstDigitCombine2
+secondDigitCombine2:    
+        ADD.w   #10, R15        ; This subroutine will add 10 to R15 and decrease R6 by one until R11 is 0
+        dec     R11
+        jnz     secondDigitCombine2
+thirdDigitCombine2:     
+        ADD.w   R12, R15        ; This will add the last digit to R15
         ret
 
 addNumbers:
         //Add R14+R15
+        add.w   R15,R14         ;Adds numbers saved in R14 and R15 and stores the result in R14
         call    #seperateDigits
         call    #displayNumber
         jmp     mainLoop
