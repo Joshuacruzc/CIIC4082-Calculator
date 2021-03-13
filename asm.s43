@@ -283,10 +283,69 @@ seperateDigits:
         ret
 
 displayNumber:
-        //Missing code
+        cmp     #0,R9
+        jeq     numZero
+        cmp     #1,R9
+        jeq     numOne
+        cmp     #2,R9
+        jeq     numTwo
+        cmp     #3,R9
+        jeq     numThree
+        cmp     #4,R9
+        jeq     numFour
+        cmp     #5,R9
+        jeq     numFive
+        cmp     #6,R9
+        jeq     numSix
+        cmp     #7,R9
+        jeq     numSeven
+        cmp     #8,R9
+        jeq     numEight
+        cmp     #9,R9
+        jeq     numNine
         ret
 
-//END HERE
+numZero:
+        mov.b   #11111100B,&0xA29       ; Display number zero in LCD
+        ret
+
+numOne:
+        mov.b   #01100000B,&0xA29       ; Display number one in LCD
+        ret
+
+numTwo:
+        mov.b   #11011011B,&0xA29       ; Display number two in LCD
+        ret
+        
+numThree:
+        mov.b   #0xF1,&0xA29            ; Display number three in LCD
+        ret
+
+numFour:
+        mov.b   #01100111B,&0xA29       ; Display number four in LCD
+        ret
+
+numFive:
+        mov.b   #10110111B,&0xA29       ; Display number five in LCD
+        ret
+
+numSix:
+        mov.b   #10111111B,&0xA29       ; Display number six in LCD
+        ret
+
+numSeven:
+        mov.b   #11100000B,&0xA29       ; Display number seven in LCD
+        ret
+
+numEight:
+        mov.b   #11111111B,&0xA29       ; Display number eight in LCD
+        ret
+
+numNine:
+        mov.b   #11100111B,&0xA29       ; Display number nine in LCD
+        ret
+
+
 
 fin:    JMP $                           ; jump to current location '$'
                                         ; (endless loop)
