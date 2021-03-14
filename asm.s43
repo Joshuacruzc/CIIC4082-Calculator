@@ -1,28 +1,11 @@
 #include "msp430.h"                     ; #define controlled include file
-//To do list:
-        //juntar los 3 dijitos
-        //separar el resultado a 3 dijitos
-        //nextOperation needs to be finished
-        //doTheMath needs to be finished
-        //addNumbers needs to be finished
-        //subNumbers needs to be finished
-        //mulNumbers needs to be finished
-        //devNumbers needs to be finished
-        //setDisplayNumber0 needs to be finished
-        //displayNumber needs to be finished
-        //displayOperation needs to be finished
+
         NAME    main                    ; module name
 
         PUBLIC  main                    ; make the main label vissible
                                         ; outside this module
         ORG     0FFFEh
         DC16    init                    ; set reset vector to 'init' label
-        
-        ORG     01C00h                  ; start of ram
-
-//PRE-DEFINED VALUES START HERE
-
-//PRE-DEFINED VALUES END HERE
 
         RSEG    CSTACK                  ; pre-declaration of segment
         RSEG    CODE                    ; place program in 'CODE' segment
@@ -30,11 +13,21 @@
 init:   mov     #SFE(CSTACK), SP        ; set up stack
 
 main:   nop                             ; main program
-        mov   #WDTPW+WDTHOLD,&WDTCTL    ; Stop watchdog timer
+        mov     #WDTPW+WDTHOLD,&WDTCTL  ; Stop watchdog timer
         mov.b   #00000110B,&P1REN       ; Activate P1.1 and P1.2 programable
                                         ; pull-up/pull-down resistors
         bis.b   #00000110B,&P1OUT       ; Set resistors for P1.1 and P1.2 as
                                         ; as pull-down
+        ; Initialize LCD
+        MOV.W   #0xffff,&LCDCPCTL0
+        MOV.W   #0xfc3f,&LCDCPCTL1
+        MOV.W   #0x0fff,&LCDCPCTL2
+        mov.w   #0x041e,&LCDCCTL0
+        mov.w   #0x0208,&LCDCVCTL
+        mov.w   #0x8000,&LCDCCPCTL
+        mov.w   #2,&LCDCMEMCTL
+        bis.w   #1,&LCDCCTL0
+        
         bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on by default
 
 setupCalc:
@@ -53,20 +46,25 @@ setupCalc:
                                         ; user has inputted 
         mov     #0,R12                  ; Represents the third number the
                                         ; user has inputted    
-        mov     #100,R13               ; Represents the delay to wait for
-                                        ; button bouncing
         mov     #0,R14                  ; Represents the first full number the
                                         ; user inputted
         mov     #0,R15                  ; Represents the second full number the
                                         ; user inputted
-        jmp     setDisplayNumber0       ; Set the display to show a 0
+        call    #displayNumber          ; Display 0 to the user
                    
 mainLoop:                               ; The brains of the application
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
-        ;cmp     #4,R4
-        ;jnz     mainLoop
-        
-        
+        cmp     #4,R4                   ; Compare if its the left button
+        jeq     pressed                 ; Left button was pressed
+        cmp     #2,R4                   ; Compares if its the right button
+        jeq     pressed                 ; Right button is pressed
+        jnz     mainLoop                ; Keep waiting for user input
+    pressed:
+        push    R4
+        call    #delay                  ; Delay to help combat button bouncing
+        call    #stillHoldDown          ; Verify if the user is still holding 
+                                        ; down the button
+        pop     R4
 
     checkState:                         ; Checks the state of the application
                                         ; and decide what to do next
@@ -75,8 +73,6 @@ mainLoop:                               ; The brains of the application
         jeq     incOperationLoop        ; User is now inputting an operation
         cmp     #7,R8                   ; If state is less than 6 means that the
         jl      incNumberLoop           ; user is still inputting the number 
-        jeq     doTheMath               ; User has finish inputting all the data
-                                        ; and is now expecting an answer
         and.b   #00000110B,R4           ; Compares if the left button (P1.1)
         cmp.b   #00000100B,R4           ; is being pressed
         jeq     setupCalc               ; If true then restart calculator
@@ -94,7 +90,7 @@ mainLoop:                               ; The brains of the application
         jeq     increment               ; If true then increment the number
         cmp.b   #00000010B,R4           ; Compares if the right button (P1.2)
                                         ; is being pressed
-        jeq     nextNumber              ; User has decided to input next number
+        jeq     nextState               ; User has decided to input next number
         jmp     mainLoop                ; Keep waiting for user input
 
     incOperationLoop:                   ; Cycles through the operations
@@ -114,30 +110,24 @@ increment:                              ; Subroutine that increments the number
                                         ; desired number
         inc     R9                      ; Increment the number by 1
         call    #displayNumber          ; Display the new number to the user
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
         jmp     mainLoop                ; Keep waiting for user input
         
 resetNumber:                            ; Resets the number back to 0
         mov     #0,R9                   ; Number is set back to 0
         call    #displayNumber          ; Display the new number to the user
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
         jmp     mainLoop                ; Keep waiting for user input
 
-nextNumber:
+nextState:
         push    R9                      ; Save the number in the stack
         mov     #0,R9                   ; Set the number to 0
         inc     R8                      ; Increment to the next state of 
                                         ; the program
         cmp     #3,R8                   ; If the program is on stage 3 then
         jeq     nextOperation           ; now we display the operation 
+        cmp     #7,R8                   ; If the program is on stage 3 then the
+        jeq     doTheMath               ; user has finish inputting all the data
+                                        ; and is now expecting an answer
         call    #displayNumber          ; Display the new number to the user
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
         jmp     mainLoop                ; Keep waiting for user input
 
 nextOperation:
@@ -161,44 +151,29 @@ resetOperation:
 
 operationSelected: 
         inc     R8
-        mov     #0,R9
         push    R9
-        jmp     setDisplayNumber0
-        
-setDisplayNumber0:
-        //Missing code
+        mov     #0,R9
+        call    #displayNumber          ; Display 0 to the user
         jmp mainLoop
-
+        
 displayAdd:
-        //Add code here
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
+        mov.b   #00000011B,&0xA29       ; Display the horizontal line for the sum symbol
+        mov.b   #01010000B,&0xA2A       ; Display the vertical line for the sum symbol
         jmp     mainLoop
         
 displaySub:
-        //Add code here
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
+        mov.b   #00000011B,&0xA29       ; Display the horizontal line for the minus symbol
         jmp     mainLoop
 
 displayMul:
-        //Add code here
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
+        mov.b   #10101010B,&0xA2A       ; Display the cross for the mult. symbol
         jmp     mainLoop
 
 displayDiv:
-        //Add code here
-        call    #delay                  ; Delay to help combat button bouncing
-        call    #stillHoldDown          ; Verify if the user is still holding 
-                                        ; down the button
+        mov.b   #00101000B,&0xA2A       ; Display the diagonal line for the div. symbol
         jmp     mainLoop
 
 stillHoldDown:
-        call    #delay
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
         and.b   #00000110B,R4           ; Compares which button is being pressed
         cmp.b   #00000100B,R4           ; Left button (P1.1) is being pressed
@@ -207,12 +182,15 @@ stillHoldDown:
         cmp.b   #00000010B,R4           ; Right button (P1.2) is being pressed
         jeq     stillHoldDown           ; If true wait for user to stop holding 
                                         ; down the button
+        call    #delay
         ret                             ; User has finally let go of the button
 
 delay:
-        dec     R13
-        jnz     delay
-        mov     #100,R13
+        mov     #0x2710,R13             ; Represents the delay to wait for
+                                        ; button bouncing
+    decrement:
+        dec     R13                     ; Decrement delay by 1
+        jnz     decrement               ; Delay to help combat button bouncing
         ret
 
 doTheMath:
@@ -225,23 +203,42 @@ doTheMath:
         pop     R6
         pop     R5
         call    #combineDigits
-        ;cmp     ,R9
+        cmp     #1,R9
         jeq     addNumbers
-        ;cmp     ,R9
+        cmp     #2,R9
         jeq     subNumbers
-        ;cmp     ,R9
+        cmp     #3,R9
         jeq     mulNumbers
-        ;cmp     ,R9
+        cmp     #4,R9
         jeq     devNumbers
         jmp     mainLoop
 
 combineDigits:
-        //Combine the first number (R5,R6,R7) and save it in R14
-        //Combine the second number (R10,R11,R12) and save it in R15
+    firstDigitCombine:      
+        ADD.w   #100, R14       ; This subroutine will add 100 to R14 and decrease R5 by one until R5 is 0
+        dec     R5
+        jnz     firstDigitCombine 
+    secondDigitCombine:     
+        ADD.w   #10, R14        ; This subroutine will add 10 to R14 and decrease R6 by one until R6 is 0
+        dec     R6
+        jnz     secondDigitCombine
+    thirdDigitCombine:      
+        ADD.w   R7, R14         ; This will add the last digit to R14
+
+    firstDigitCombine2:     
+        ADD.w   #100, R15       ; This subroutine will add 100 to R15 and decrease R10 by one until R10 is 0
+        dec     R10
+        jnz     firstDigitCombine2
+    secondDigitCombine2:    
+        ADD.w   #10, R15        ; This subroutine will add 10 to R15 and decrease R6 by one until R11 is 0
+        dec     R11
+        jnz     secondDigitCombine2
+    thirdDigitCombine2:     
+        ADD.w   R12, R15        ; This will add the last digit to R15
         ret
 
 addNumbers:
-        //Add R14+R15
+        add.w   R15,R14         ; Adds numbers saved in R14 and R15 and stores the result in R14
         call    #seperateDigits
         call    #displayNumber
         jmp     mainLoop
@@ -269,10 +266,67 @@ seperateDigits:
         ret
 
 displayNumber:
-        //Missing code
+        cmp     #0,R9
+        jeq     numZero
+        cmp     #1,R9
+        jeq     numOne
+        cmp     #2,R9
+        jeq     numTwo
+        cmp     #3,R9
+        jeq     numThree
+        cmp     #4,R9
+        jeq     numFour
+        cmp     #5,R9
+        jeq     numFive
+        cmp     #6,R9
+        jeq     numSix
+        cmp     #7,R9
+        jeq     numSeven
+        cmp     #8,R9
+        jeq     numEight
+        cmp     #9,R9
+        jeq     numNine
         ret
 
-//END HERE
+numZero:
+        mov.b   #11111100B,&0xA29       ; Display number zero in LCD
+        ret
+
+numOne:
+        mov.b   #01100000B,&0xA29       ; Display number one in LCD
+        ret
+
+numTwo:
+        mov.b   #11011011B,&0xA29       ; Display number two in LCD
+        ret
+        
+numThree:
+        mov.b   #0xF1,&0xA29            ; Display number three in LCD
+        ret
+
+numFour:
+        mov.b   #01100111B,&0xA29       ; Display number four in LCD
+        ret
+
+numFive:
+        mov.b   #10110111B,&0xA29       ; Display number five in LCD
+        ret
+
+numSix:
+        mov.b   #10111111B,&0xA29       ; Display number six in LCD
+        ret
+
+numSeven:
+        mov.b   #11100000B,&0xA29       ; Display number seven in LCD
+        ret
+
+numEight:
+        mov.b   #11111111B,&0xA29       ; Display number eight in LCD
+        ret
+
+numNine:
+        mov.b   #11100111B,&0xA29       ; Display number nine in LCD
+        ret
 
 fin:    JMP $                           ; jump to current location '$'
                                         ; (endless loop)
