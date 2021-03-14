@@ -1,12 +1,18 @@
 #include "msp430.h"                     ; #define controlled include file
-
         NAME    main                    ; module name
-
         PUBLIC  main                    ; make the main label vissible
                                         ; outside this module
         ORG     0FFFEh
         DC16    init                    ; set reset vector to 'init' label
-
+        ORG     01C00h                  ; start of ram
+//PRE-DEFINED VALUES START HERE
+; Digits    0     1     2     3     4     5     6     7     8     9
+digitH  db 0xFC, 0x60, 0xDB, 0xF3, 0x67, 0xB7, 0xBF, 0xE0, 0xFF, 0xF7
+digitL  db 0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+; Oper      /     +     -     *
+operH   db 0x00, 0x03, 0x03, 0x00
+operL   db 0x28, 0x50, 0x00, 0xFA
+//PRE-DEFINED VALUES END HERE
         RSEG    CSTACK                  ; pre-declaration of segment
         RSEG    CODE                    ; place program in 'CODE' segment
 
@@ -18,17 +24,17 @@ main:   nop                             ; main program
                                         ; pull-up/pull-down resistors
         bis.b   #00000110B,&P1OUT       ; Set resistors for P1.1 and P1.2 as
                                         ; as pull-down
-        ; Initialize LCD
-        MOV.W   #0xffff,&LCDCPCTL0
-        MOV.W   #0xfc3f,&LCDCPCTL1
-        MOV.W   #0x0fff,&LCDCPCTL2
-        mov.w   #0x041e,&LCDCCTL0
-        mov.w   #0x0208,&LCDCVCTL
-        mov.w   #0x8000,&LCDCCPCTL
-        mov.w   #2,&LCDCMEMCTL
-        bis.w   #1,&LCDCCTL0
+        ; Enable LCD segments
+        mov     #0xffff,&LCDCPCTL0
+        mov     #0xfc3f,&LCDCPCTL1
+        mov     #0x0fff,&LCDCPCTL2
         
-        bic.w   #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on by default
+        mov     #0x041e,&LCDCCTL0       ; Initialize LCD_C
+        mov     #0x0208,&LCDCVCTL       ; Initialize voltage
+        mov     #0x8000,&LCDCCPCTL      ; Clock synchronization enabled
+        mov     #2,&LCDCMEMCTL          ; Clear LCD memory
+        bis     #1,&LCDCCTL0            ; Turn LCD on
+        bic     #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on by default
 
 setupCalc:
         mov     #0,R5                   ; Represents the first number the
@@ -50,6 +56,7 @@ setupCalc:
                                         ; user inputted
         mov     #0,R15                  ; Represents the second full number the
                                         ; user inputted
+        mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         call    #displayNumber          ; Display 0 to the user
                    
 mainLoop:                               ; The brains of the application
@@ -82,12 +89,11 @@ mainLoop:                               ; The brains of the application
         cmp.b   #00000000B,R4           ; Compares if both button are 
                                         ; being pressed
         jeq     setupCalc               ; If true then restart calculator
-        jmp     mainLoop                ; Keep waiting for user input
 
     incNumberLoop:                      ; Loop for incrementing the number
         and.b   #00000110B,R4           ; Compares if the left button (P1.1)
         cmp.b   #00000100B,R4           ; is being pressed
-        jeq     increment               ; If true then increment the number
+        jeq     nextNumber              ; If true then increment the number
         cmp.b   #00000010B,R4           ; Compares if the right button (P1.2)
                                         ; is being pressed
         jeq     nextState               ; User has decided to input next number
@@ -103,7 +109,7 @@ mainLoop:                               ; The brains of the application
                                         ; we reset to display the next number
         jmp     mainLoop                ; Keep waiting for user input
 
-increment:                              ; Subroutine that increments the number
+nextNumber:                             ; Subroutine that increments the number
                                         ; by 1 and circles back to 0
         cmp     #9,R9                   ; Resets the number back to 0 meaning
         jeq     resetNumber             ; the user has accidentaly missed the 
@@ -131,23 +137,17 @@ nextState:
         jmp     mainLoop                ; Keep waiting for user input
 
 nextOperation:
-        cmp     #4,R9                   ; Resets the operation back to plus
-        jeq     resetOperation          ; meaning the user has accidentaly 
-                                        ; missed the desired operation
-        inc     R9
-        cmp     #1,R9
-        jeq     displayAdd
-        cmp     #2,R9
-        jeq     displaySub
-        cmp     #3,R9
-        jeq     displayMul
-        cmp     #4,R9
-        jeq     displayDiv
+        cmp     #3,R9                   ; Resets the number back to 0 meaning
+        jeq     resetOperation          ; the user has accidentaly missed the 
+                                        ; desired operation
+        inc     R9                      ; Increment the number by 1
+        call    #displayOperation       ; Display the new number to the user
         jmp     mainLoop                ; Keep waiting for user input
 
 resetOperation:
-        mov     #0,R9                   ; We go back to display
-        jmp     nextOperation           ; the first operation
+        mov     #0,R9                   ; Number is set back to 0
+        call    #displayOperation       ; Display the new number to the user
+        jmp     mainLoop                ; Keep waiting for user input
 
 operationSelected: 
         inc     R8
@@ -155,23 +155,6 @@ operationSelected:
         mov     #0,R9
         call    #displayNumber          ; Display 0 to the user
         jmp mainLoop
-        
-displayAdd:
-        mov.b   #00000011B,&0xA29       ; Display the horizontal line for the sum symbol
-        mov.b   #01010000B,&0xA2A       ; Display the vertical line for the sum symbol
-        jmp     mainLoop
-        
-displaySub:
-        mov.b   #00000011B,&0xA29       ; Display the horizontal line for the minus symbol
-        jmp     mainLoop
-
-displayMul:
-        mov.b   #10101010B,&0xA2A       ; Display the cross for the mult. symbol
-        jmp     mainLoop
-
-displayDiv:
-        mov.b   #00101000B,&0xA2A       ; Display the diagonal line for the div. symbol
-        jmp     mainLoop
 
 stillHoldDown:
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
@@ -194,7 +177,6 @@ delay:
         ret
 
 doTheMath:
-        inc     R8
         pop     R12
         pop     R11
         pop     R10
@@ -209,7 +191,7 @@ doTheMath:
         jeq     subNumbers
         cmp     #3,R9
         jeq     mulNumbers
-        cmp     #4,R9
+        cmp     #0,R9
         jeq     devNumbers
         jmp     mainLoop
 
@@ -240,93 +222,90 @@ combineDigits:
 addNumbers:
         add.w   R15,R14         ; Adds numbers saved in R14 and R15 and stores the result in R14
         call    #seperateDigits
-        call    #displayNumber
+        call    #displayResults
         jmp     mainLoop
 
 subNumbers:
         //Sub R14-R15
         call    #seperateDigits
-        call    #displayNumber
+        call    #displayResults
         jmp     mainLoop
 
 mulNumbers:
         //Mul R14*R15
         call    #seperateDigits
-        call    #displayNumber
+        call    #displayResults
         jmp     mainLoop
 
 devNumbers:
         //Div R14/R15
         call    #seperateDigits
-        call    #displayNumber
+        call    #displayResults
         jmp     mainLoop
         
 seperateDigits:
         //Missing Code
         ret
-
-displayNumber:
-        cmp     #0,R9
-        jeq     numZero
-        cmp     #1,R9
-        jeq     numOne
-        cmp     #2,R9
-        jeq     numTwo
-        cmp     #3,R9
-        jeq     numThree
-        cmp     #4,R9
-        jeq     numFour
-        cmp     #5,R9
-        jeq     numFive
-        cmp     #6,R9
-        jeq     numSix
-        cmp     #7,R9
-        jeq     numSeven
-        cmp     #8,R9
-        jeq     numEight
-        cmp     #9,R9
-        jeq     numNine
-        ret
-
-numZero:
-        mov.b   #11111100B,&0xA29       ; Display number zero in LCD
-        ret
-
-numOne:
-        mov.b   #01100000B,&0xA29       ; Display number one in LCD
-        ret
-
-numTwo:
-        mov.b   #11011011B,&0xA29       ; Display number two in LCD
+        
+displayResults:
+        //Missing Code
         ret
         
-numThree:
-        mov.b   #0xF1,&0xA29            ; Display number three in LCD
+displayNumber:
+        cmp     #0,R8
+        jeq     displayFirstSegment
+        cmp     #1,R8
+        jeq     displaySecondSegment
+        cmp     #2,R8
+        jeq     displayThirdSegment
+        cmp     #3,R8
+        jeq     displayOperation
+        cmp     #4,R8
+        jeq     displayFirstSegment
+        cmp     #5,R8
+        jeq     displaySecondSegment
+        cmp     #6,R8
+        jeq     displayThirdSegment
+        
+displayOperation:
+        mov     #2,&LCDCMEMCTL          ; Clear LCD memory
+        mov.b   operH(R9),&0x0A29
+        mov.b   operL(R9),&0x0A29+1
+        ret
+        
+displayFirstSegment:
+        mov.b   digitH(R9),&0x0A29
+        mov.b   digitL(R9),&0x0A29+1
         ret
 
-numFour:
-        mov.b   #01100111B,&0xA29       ; Display number four in LCD
+displaySecondSegment:
+        mov.b   digitH(R9),&0x0A25
+        mov.b   digitL(R9),&0x0A25+1
         ret
 
-numFive:
-        mov.b   #10110111B,&0xA29       ; Display number five in LCD
+displayThirdSegment:
+        mov.b   digitH(R9),&0x0A23
+        mov.b   digitL(R9),&0x0A23+1
         ret
 
-numSix:
-        mov.b   #10111111B,&0xA29       ; Display number six in LCD
+
+displayFourthSegment:
+        mov.b   digitH(R9),&0x0A32
+        mov.b   digitL(R9),&0x0A32+1
         ret
 
-numSeven:
-        mov.b   #11100000B,&0xA29       ; Display number seven in LCD
+
+displayFifthSegment:
+        mov.b   digitH(R9),&0x0A2E
+        mov.b   digitL(R9),&0x0A2E+1
         ret
 
-numEight:
-        mov.b   #11111111B,&0xA29       ; Display number eight in LCD
+
+displaySixthSegment:
+        mov.b   digitH(R9),&0x0A27
+        mov.b   digitL(R9),&0x0A27+1
         ret
 
-numNine:
-        mov.b   #11100111B,&0xA29       ; Display number nine in LCD
-        ret
 
 fin:    JMP $                           ; jump to current location '$'
                                         ; (endless loop)
