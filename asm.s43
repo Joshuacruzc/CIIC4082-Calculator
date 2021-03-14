@@ -228,6 +228,7 @@ addNumbers:
 
 subNumbers:
         //Sub R14-R15
+        sub.w   R15, R14                ; R14 = R14 - R15
         call    #seperateDigits
         call    #displayResults
         jmp     mainLoop
@@ -266,12 +267,154 @@ multSwitchNumbers:
 
 devNumbers:
         //Div R14/R15
+        push.w  R5              ; store value of R5 in stack
+        mov.w   #0, R5          ; R5 = quotient = 0    
+divLoop:          
+        sub.w   R15, R14        ; R14 = R14 - R15
+        cmp.w   #0, R14         ; compare to see if we can keep subtracting
+        jn      divEnd          ; R14 < 0, its negative so we subtracted too much
+        inc     R5              ; quotient += 1
+        jeq     divEnd          ; R14 == 0, there's nothing left to subtract
+        jmp     divLoop         ; keep looping       
+divEnd:
+        mov.W   R5, R14         ; store result in R14
+        pop.w   R5              ; restore value of R5
         call    #seperateDigits
         call    #displayResults
         jmp     mainLoop
-        
-seperateDigits:
-        //Missing Code
+ 
+modDivTen: ; divides R14 by 10 and stores result in R14 and remainder in R9
+        push.w  R15             ; push R15 to stack so that we can restore its value later
+        mov.w   #0, R9          ; R9 = quotient = 0
+mdtLoop:
+        mov.w   R14, R15        ; R15 = remainder = R14
+        sub.w   #10, R14        ; R14 = R14 - 10
+        cmp.w   #0, R14         ; compare to see if we can keep subtracting
+        jn      mdtEnd          ; R14 < 0, its negative so we subtracted too much
+        inc     R9              ; quotient += 1
+        jeq     mdtEnd          ; R14 == 0, there's nothing left to subtract
+        jmp     mdtLoop         ; keep looping       
+mdtEnd:
+        mov.w   R9, R14         ; store result in R14
+        mov.w   R15, R9         ; store remainder in R9
+        pop.w   R15             ; restore value of R15
+        ret
+             
+modDivTenMult: ; divides R15 by 10 and stores result in R15 and remainder in R9
+        push.w  R14             ; push R14 to stack so that we can restore its value later
+        mov.w   #0, R9          ; R9 = quotient = 0
+mdtLoopMult:
+        mov.w   R15, R14        ; R14 = remainder = R15
+        sub.w   #10, R15        ; R15 = R15 - 10
+        cmp.w   #0, R15         ; compare to see if we can keep subtracting
+        jn      mdtEndMult      ; R15 < 0, its negative so we subtracted too much
+        inc     R9              ; quotient += 1
+        jeq     mdtEndMult      ; R15 == 0, there's nothing left to subtract
+        jmp     mdtLoopMult             ; keep looping       
+mdtEndMult:
+        mov.w   R9, R15         ; store result in R15
+        mov.w   R14, R9         ; store remainder in R9
+        pop.w   R14             ; restore value of R14
+        ret
+
+seperateDigits: ; separeates R14 into its decimal components
+        cmp.w   #2, R9          ; Subtraction, always 3 digits, 
+        jeq     sepDigSub       ; but sometimes its negative
+        cmp.w   #3, R9          ; Multiplication, 3 to 6 digits
+        jeq     sepDigMult
+        cmp.w   #4, R9          ; Division, always 3 digits
+        jeq     threeDigits
+                                ; else its Addition, 3 to 4 digits
+        cmp.w   #1000, R14      ; R14-1000, if result is positive, 
+        jc      fourDigits      ; then R14 has 4 digits
+        jmp     threeDigits             ; else, R14 has three digits
+        jmp     sepDigEnd      
+sepDigSub: ; checks if R14 is negative
+        push.w  R14             ; store R14 in stack
+        and.w   #1000000000000000b, R14 ; apply bit mask
+                                ; if most significant bit is 1, then its a negative number
+        cmp.w   #0, R14         ; if R14 == 0, then most significant bit is 0
+        pop.w   R14             ; restore value of R14
+        jeq     threeDigits     ; R14 is a positive number
+        jmp     threeDigitsNeg
+threeDigitsNeg: 
+        inv     R14             ; convert R14 to positive, first invert everything,
+        inc     R14             ; then add 1
+        call    #threeDigits
+        mov.w   #1, R14         ; add negative flag
+        jmp     sepDigEnd
+threeDigits:
+        call    #modDivTen
+        mov.w   R9, R5
+        call    #modDivTen
+        mov.w   R9, R6
+        call    #modDivTen
+        mov.w   R9, R7
+        mov.w   #3, R15         ; store amount of digits in R15
+        ret
+fourDigits:
+        call    #threeDigits
+        call    #modDivTen
+        mov.w   R9, R10
+        mov.w   #4, R15         ; store amount of digits in R15
+        jmp     sepDigEnd
+sepDigMult: ; checks how many digits the product has
+        cmp.w   #0, R15         ; if R15 is 0, then the product has 3 digits
+        jeq     threeDigitsMult   
+        cmp.w   #100, R15       ; R15-100, if result has carry, 
+        jc      sixDigitsMult   ; then R15 has 6 digits
+        cmp.w   #10, R15        ; R15-10, else if result has carry,
+        jc      fiveDigitsMult  ; then R15 has 5 digits
+        jmp     fourDigitsMult  ; else R15 has 4 digits 
+threeDigitsMult:
+        call    #modDivTen
+        mov.w   R9, R5
+        call    #modDivTen
+        mov.w   R9, R6
+        call    #modDivTen
+        mov.w   R9, R7 
+        mov.w   #3, R15         ; store amount of digits in R15
+        jmp     sepDigEnd
+fourDigitsMult:
+        call    #modDivTen
+        mov.w   R9, R5
+        call    #modDivTen
+        mov.w   R9, R6
+        call    #modDivTen
+        mov.w   R9, R7
+        call    #modDivTenMult
+        mov.w   R9, R10
+        mov.w   #4, R15          ; store amount of digits in R15
+        jmp     sepDigEnd
+fiveDigitsMult:
+        call    #modDivTen
+        mov.w   R9, R5
+        call    #modDivTen
+        mov.w   R9, R6
+        call    #modDivTen
+        mov.w   R9, R7
+        call    #modDivTenMult
+        mov.w   R9, R10
+        call    #modDivTenMult
+        mov.w   R9, R11
+        mov.w   #5, R15          ; store amount of digits in R15
+        jmp     sepDigEnd
+sixDigitsMult:
+       call    #modDivTen
+        mov.w   R9, R5
+        call    #modDivTen
+        mov.w   R9, R6
+        call    #modDivTen
+        mov.w   R9, R7
+        call    #modDivTenMult
+        mov.w   R9, R10
+        call    #modDivTenMult
+        mov.w   R9, R11
+        call    #modDivTenMult
+        mov.w   R9, R12
+        mov.w   #6, R15          ; store amount of digits in R15
+        jmp     sepDigEnd
+sepDigEnd:
         ret
         
 displayResults:
