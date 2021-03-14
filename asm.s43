@@ -221,6 +221,7 @@ combineDigits:
 
 addNumbers:
         add.w   R15,R14         ; Adds numbers saved in R14 and R15 and stores the result in R14
+        mov     #0, R15
         call    #seperateDigits
         call    #displayResults
         jmp     mainLoop
@@ -232,10 +233,36 @@ subNumbers:
         jmp     mainLoop
 
 mulNumbers:
-        //Mul R14*R15
+    multSetup:              
+        CMP.w   R14, R15
+        JL      multAlgorithm
+        CALL    #multSwitchNumbers
+    multAlgorithm:          
+        MOV     R14, R6
+        MOV     R15, R7
+        MOV     #0, R15
+    multLoop:
+        DEC     R7
+        jz      multDone
+        ADD.w   R6, R14
+        CMP.w   #1000, R14
+        JGE     multReachedThousand
+        jmp     multLoop
+    multDone:
         call    #seperateDigits
         call    #displayResults
         jmp     mainLoop
+
+multReachedThousand:
+        SUB.w   #1000,R14
+        INC     R15
+        jmp     multLoop
+
+multSwitchNumbers:
+        PUSH.w   R15
+        MOV      R14, R15
+        POP.w    R14
+        RET
 
 devNumbers:
         //Div R14/R15
