@@ -11,6 +11,18 @@
         <LimitSize>0</LimitSize>
         <ByteLimit>50</ByteLimit>
     </Stack>
+    <EEM_State_Storage>
+        <Buffer>010000000300000000000000</Buffer>
+    </EEM_State_Storage>
+    <EEM_Sequencer>
+        <Buffer>000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</Buffer>
+    </EEM_Sequencer>
+    <EEM_Cycle_Counter_0>
+        <Counter0>0000000000000000000000000000000000000000000000000000000000000000</Counter0>
+    </EEM_Cycle_Counter_0>
+    <EEM_Cycle_Counter_1>
+        <Counter1>0000000000000000000000000000000000000000000000000000000000000000</Counter1>
+    </EEM_Cycle_Counter_1>
     <Breakpoints>
         <Count>0</Count>
     </Breakpoints>
@@ -34,18 +46,6 @@
         <all_registers>0</all_registers>
         <File_name />
     </Memory_Dump>
-    <EEM_State_Storage>
-        <Buffer>010000000300000000000000</Buffer>
-    </EEM_State_Storage>
-    <EEM_Sequencer>
-        <Buffer>000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000</Buffer>
-    </EEM_Sequencer>
-    <EEM_Cycle_Counter_0>
-        <Counter0>0000000000000000000000000000000000000000000000000000000000000000</Counter0>
-    </EEM_Cycle_Counter_0>
-    <EEM_Cycle_Counter_1>
-        <Counter1>0000000000000000000000000000000000000000000000000000000000000000</Counter1>
-    </EEM_Cycle_Counter_1>
     <Aliases>
         <Count>0</Count>
         <SuppressDialog>0</SuppressDialog>

@@ -5,17 +5,23 @@
         ORG     0FFFEh
         DC16    init                    ; set reset vector to 'init' label
         ORG     01C00h                  ; start of ram
+
 //PRE-DEFINED VALUES START HERE
+
 ; Digits    0     1     2     3     4     5     6     7     8     9
 digitH  db 0xFC, 0x60, 0xDB, 0xF3, 0x67, 0xB7, 0xBF, 0xE0, 0xFF, 0xF7
 digitL  db 0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+
 ; Oper      /     +     -     *
 operH   db 0x00, 0x03, 0x03, 0x03
 operL   db 0x28, 0x50, 0x00, 0xFA
+
 ; Error     E     R     O
 errorH  db 0x9E, 0xCF, 0xFC
 errorL  db 0x00, 0x02, 0x00
+
 //PRE-DEFINED VALUES END HERE
+
         RSEG    CSTACK                  ; pre-declaration of segment
         RSEG    CODE                    ; place program in 'CODE' segment
 
@@ -39,6 +45,11 @@ main:   nop                             ; main program
         bis     #1,&LCDCCTL0            ; Turn LCD on
         bic     #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on by default
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 setupCalc:
         mov     #0,R5                   ; Represents the first number the
                                         ; user has inputted 
@@ -61,7 +72,12 @@ setupCalc:
                                         ; user inputted
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         call    #displayNumber          ; Display 0 to the user
-                   
+
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 mainLoop:                               ; The brains of the application
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
         cmp     #4,R4                   ; Compare if its the left button
@@ -114,6 +130,11 @@ mainLoop:                               ; The brains of the application
                                         ; we reset to display the next number
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 nextNumber:                             ; Loops through numbers 0-9
         cmp     #9,R9                   ; Resets the number back to 0 meaning
         jeq     resetNumber             ; the user has accidentaly missed the 
@@ -121,12 +142,22 @@ nextNumber:                             ; Loops through numbers 0-9
         inc     R9                      ; Increment the number by 1
         call    #displayNumber          ; Display the new number to the user
         jmp     mainLoop                ; Keep waiting for user input
-        
+
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 resetNumber:                            ; Resets the number back to 0
         mov     #0,R9                   ; Number is set back to 0
         call    #displayNumber          ; Display the new number to the user
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 nextState:                              ; Moves to the next state of the application
         push    R9                      ; Save the number in the stack
         mov     #0,R9                   ; Reset R9
@@ -139,6 +170,11 @@ nextState:                              ; Moves to the next state of the applica
         call    #displayNumber          ; Display the next digit to the user
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 nextOperation:                          ; Loops through operations +,-,*,/
         cmp     #3,R9                   ; Resets the number back to 0 meaning
         jeq     resetOperation          ; the user has accidentaly missed the 
@@ -147,11 +183,21 @@ nextOperation:                          ; Loops through operations +,-,*,/
         call    #displayOperation       ; Display the next operation to the user
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 resetOperation:                         ; Reset operation back to +
         mov     #0,R9                   ; Number is set back to 0
         call    #displayOperation       ; Display the next operation to the user
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 operationSelected:                      ; User has decided the operation
         inc     R8                      ; Increment to the next state
         push    R9                      ; Save the operation in the stack
@@ -159,6 +205,11 @@ operationSelected:                      ; User has decided the operation
         call    #displayNumber          ; Display 0 to the user
         jmp mainLoop                    ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 stillHoldDown:                          ; User is still holding down the button
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
         and.b   #00000110B,R4           ; Compares which button is being pressed
@@ -171,6 +222,11 @@ stillHoldDown:                          ; User is still holding down the button
         call    #delay                  ; Delay to help combat button bouncing
         ret                             ; User has finally let go of the button
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 delay:                                  ; Used to help against button bouncing
         mov     #0x2710,R13             ; Represents the delay to wait for
                                         ; button bouncing
@@ -179,6 +235,11 @@ delay:                                  ; Used to help against button bouncing
         jnz     decrement               ; Keep Looping until delay = 0
         ret                             ; Delay finished
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 doTheMath:                              ; Mathimatical brain of the application
         pop     R12                     ; Least significant digit of second number
         pop     R11                     ; Second significant digit of second number
@@ -197,6 +258,11 @@ doTheMath:                              ; Mathimatical brain of the application
         cmp     #0,R9                   ; R9=0 means the operation chosen is dev
         jeq     devNumbers              ; Call the dev operation
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 combineDigits:                          ; Subroutine for combining digits
     firstDigitCombine:   
         cmp     #0,R5
@@ -229,6 +295,11 @@ combineDigits:                          ; Subroutine for combining digits
         add     R12, R15                ; This will add the last digit to R15
         ret
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 addNumbers:                             ; Operation for adding 2 numbers
         add     R15,R14                 ; Adds numbers in R14 and R15 and
                                         ; stores the result in R14
@@ -238,6 +309,11 @@ addNumbers:                             ; Operation for adding 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 mulNumbers:                             ; Operation for multiplying 2 numbers
         cmp     #0,R15                  ; Check if the R15 = 0
         jeq     display0                ; If R15 = 0 then result = 0 
@@ -264,11 +340,21 @@ mulNumbers:                             ; Operation for multiplying 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 multReachedThousand:                    ; Save that thousand on R15
         sub     #10000,R14              ; Sub 1000-R14 so we can move that to R15
         inc     R15                     ; Increment 1 meaning the first thousand
         jmp     multLoop                ; Go back to multiplying
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 multSwitchNumbers:                      ; Invert the data on both R14 and R15
         push     R15                    ; Pushed to the stack so we dont 
                                         ; override the data
@@ -276,6 +362,11 @@ multSwitchNumbers:                      ; Invert the data on both R14 and R15
         pop      R14                    ; Retrieve the data from the stack
         ret                             ; Swapping done
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 subNumbers:                             ; Operation for subtracting 2 numbers
         sub     R15, R14                ; R14 = R14 - R15
         mov     #0,R15                  ; Set R15 to 0 because we need it later
@@ -284,6 +375,11 @@ subNumbers:                             ; Operation for subtracting 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 devNumbers:                             ; Operation for deviding 2 numbers
         cmp     #0,R15                  ; Check if the denominator is 0
         jeq     ceroIsOnDenominator     ; If 0 then show error
@@ -307,25 +403,50 @@ devNumbers:                             ; Operation for deviding 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 ceroIsOnNumerator:                      ; Cero is on numerator meaning result=0
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         call    #displayFirstSegment    ; Display number to user
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 ceroIsOnDenominator:                    ; Cero is on denominator meaning an error
         call    #displayError           ; Display error to user
         jmp     mainLoop                ; Keep waiting for user input
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 display0:
         mov     #0,R9
         call    displayFirstSegment  
         jmp     mainLoop
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 seperateDigits: ; separeates R14 into its decimal components
         cmp     #2, R9          ; Subtraction, always 3 digits, 
         jeq     sepDigSub       ; but sometimes its negative
         jmp     seperate
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 sepDigSub: ; checks if R14 is negative
         push    R14             ; store R14 in stack
         and     #1000000000000000b, R14 ; apply bit mask
@@ -334,13 +455,23 @@ sepDigSub: ; checks if R14 is negative
         pop     R14             ; restore value of R14
         jeq     seperate     ; R14 is a positive number
         jmp     applyNegative  ; R14 is a negative number
-        
+
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 applyNegative: 
         inv     R14             ; convert R14 to positive, first invert everything,
         inc     R14             ; then add 1
         mov     #1,R13         ; add negative flag
         jmp     seperate
-              
+
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 seperate: 
         mov     #3,R12
         mov     #0,R11
@@ -409,7 +540,12 @@ seperate:
         push    R6
         push    R5
         jmp     displayResults  
-        
+
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayResults:
         mov     #7,R10
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
@@ -468,10 +604,20 @@ displayResults:
     resultsDone:
         jmp     mainLoop
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayNegative:
         bis.b   #4,&0x0A29+1
         jmp     displayNextDigit
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayNumber:
         cmp     #0,R8
         jeq     displayFirstSegment
@@ -487,13 +633,23 @@ displayNumber:
         jeq     displaySecondSegment
         cmp     #6,R8
         jeq     displayThirdSegment
-        
+
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayOperation:
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         mov.b   operH(R9),&0x0A29
         mov.b   operL(R9),&0x0A29+1
         ret
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayError:
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         mov     #0,R9
@@ -513,34 +669,61 @@ displayError:
         mov.b   errorL(R9),&0x0A2E+1
         jmp     mainLoop
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayFirstSegment:
         mov.b   digitH(R9),&0x0A29
         mov.b   digitL(R9),&0x0A29+1
         ret
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displaySecondSegment:
         mov.b   digitH(R9),&0x0A25
         mov.b   digitL(R9),&0x0A25+1
         ret
 
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayThirdSegment:
         mov.b   digitH(R9),&0x0A23
         mov.b   digitL(R9),&0x0A23+1
         ret
 
-
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayFourthSegment:
         mov.b   digitH(R9),&0x0A32
         mov.b   digitL(R9),&0x0A32+1
         ret
 
-
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displayFifthSegment:
         mov.b   digitH(R9),&0x0A2E
         mov.b   digitL(R9),&0x0A2E+1
         ret
 
-
+// Objetivo:
+// Precondiciones:
+// Postcondiciones:
+// Autor:
+// Fecha:
 displaySixthSegment:
         mov.b   digitH(R9),&0x0A27
         mov.b   digitL(R9),&0x0A27+1
