@@ -12,6 +12,9 @@ digitL  db 0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 ; Oper      /     +     -     *
 operH   db 0x00, 0x03, 0x03, 0x00
 operL   db 0x28, 0x50, 0x00, 0xFA
+; Error     E     R     O
+errorH  db 0x9E, 0xCF, 0xFC
+errorL  db 0x00, 0x02, 0x00
 //PRE-DEFINED VALUES END HERE
         RSEG    CSTACK                  ; pre-declaration of segment
         RSEG    CODE                    ; place program in 'CODE' segment
@@ -265,9 +268,21 @@ subNumbers:
         jmp     mainLoop
 
 devNumbers:
+        cmp     #0,R15
+        jeq     ceroIsOnDenominator
+        cmp     #0,R14
+        jeq     ceroIsOnNumerator
         push.w  R5              ; store value of R5 in stack
         mov.w   #0, R5          ; R5 = quotient = 0   
- 
+
+ceroIsOnNumerator:
+        call    #displayFirstSegment
+        jmp     mainLoop
+
+ceroIsOnDenominator:
+        call    #displayError
+        jmp     mainLoop
+        
 divLoop:          
         sub.w   R15, R14        ; R14 = R14 - R15
         cmp.w   #0, R14         ; compare to see if we can keep subtracting
@@ -549,8 +564,28 @@ displayOperation:
         mov.b   operH(R9),&0x0A29
         mov.b   operL(R9),&0x0A29+1
         ret
-        
+
+displayError:
+        mov     #2,&LCDCMEMCTL          ; Clear LCD memory
+        mov     #0,R9
+        mov.b   errorH(R9),&0x0A29
+        mov.b   errorL(R9),&0x0A29+1
+        mov     #1,R9
+        mov.b   errorH(R9),&0x0A25
+        mov.b   errorL(R9),&0x0A25+1
+        mov     #1,R9
+        mov.b   errorH(R9),&0x0A23
+        mov.b   errorL(R9),&0x0A23+1
+        mov     #2,R9
+        mov.b   errorH(R9),&0x0A32
+        mov.b   errorL(R9),&0x0A32+1
+        mov     #1,R9
+        mov.b   errorH(R9),&0x0A2E
+        mov.b   errorL(R9),&0x0A2E+1
+        jmp     mainLoop
+
 displayFirstSegment:
+        mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         mov.b   digitH(R9),&0x0A29
         mov.b   digitL(R9),&0x0A29+1
         ret
@@ -582,7 +617,6 @@ displaySixthSegment:
         mov.b   digitH(R9),&0x0A27
         mov.b   digitL(R9),&0x0A27+1
         ret
-
 
 fin:    JMP $                           ; jump to current location '$'
                                         ; (endless loop)
