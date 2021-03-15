@@ -5,23 +5,17 @@
         ORG     0FFFEh
         DC16    init                    ; set reset vector to 'init' label
         ORG     01C00h                  ; start of ram
-
 //PRE-DEFINED VALUES START HERE
-
 ; Digits    0     1     2     3     4     5     6     7     8     9
 digitH  db 0xFC, 0x60, 0xDB, 0xF3, 0x67, 0xB7, 0xBF, 0xE0, 0xFF, 0xF7
 digitL  db 0x28, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-
 ; Oper      /     +     -     *
 operH   db 0x00, 0x03, 0x03, 0x03
 operL   db 0x28, 0x50, 0x00, 0xFA
-
 ; Error     E     R     O
 errorH  db 0x9E, 0xCF, 0xFC
 errorL  db 0x00, 0x02, 0x00
-
 //PRE-DEFINED VALUES END HERE
-
         RSEG    CSTACK                  ; pre-declaration of segment
         RSEG    CODE                    ; place program in 'CODE' segment
 
@@ -427,34 +421,34 @@ ceroIsOnDenominator:                    ; Cero is on denominator meaning an erro
 // Postcondiciones:
 // Autor:
 // Fecha:
-display0:
-        mov     #0,R9
-        call    displayFirstSegment  
-        jmp     mainLoop
+display0:                               ; Display the number 0 to the user
+        mov     #0,R9                   ; R9 represents the number to be printed
+        call    displayFirstSegment     ; Display the number on the first segment
+        jmp     mainLoop                ; Keep waiting for user input 
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-seperateDigits: ; separeates R14 into its decimal components
-        cmp     #2, R9          ; Subtraction, always 3 digits, 
-        jeq     sepDigSub       ; but sometimes its negative
-        jmp     seperate
+seperateDigits:                         ; Separeates R14 into its decimal components
+        cmp     #2, R9                  ; Subtraction, always 3 digits, but sometimes
+        jeq     sepDigSub               ; it's negative so we have to account for that
+        jmp     seperate                ; Any other operation gets seperated the same way
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-sepDigSub: ; checks if R14 is negative
-        push    R14             ; store R14 in stack
-        and     #1000000000000000b, R14 ; apply bit mask
-                                ; if most significant bit is 1, then its a negative number
-        cmp     #0,R14         ; if R14 == 0, then most significant bit is 0
-        pop     R14             ; restore value of R14
-        jeq     seperate     ; R14 is a positive number
-        jmp     applyNegative  ; R14 is a negative number
+sepDigSub:                              ; Checks if R14 is negative
+        push    R14                     ; Store R14 in stack
+        and     #1000000000000000b, R14 ; Apply bit mask
+                                        ; If most significant bit is 1, then its a negative number
+        cmp     #0,R14                  ; If R14 == 0, then most significant bit is 0
+        pop     R14                     ; Restore value of R14
+        jeq     seperate                ; R14 is a positive number
+        jmp     applyNegative           ; R14 is a negative number
 
 // Objetivo:
 // Precondiciones:
@@ -462,71 +456,81 @@ sepDigSub: ; checks if R14 is negative
 // Autor:
 // Fecha:
 applyNegative: 
-        inv     R14             ; convert R14 to positive, first invert everything,
-        inc     R14             ; then add 1
-        mov     #1,R13         ; add negative flag
-        jmp     seperate
+        inv     R14                     ; Convert R14 to positive, first invert everything,
+        inc     R14                     ; Then add 1
+        mov     #1,R13                  ; Add negative flag
+        jmp     seperate                ; Seperate the digits
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-seperate: 
-        mov     #3,R12
-        mov     #0,R11
-    loop:
-        dec     R12
-        mov     #0, R9          ; R9 = quotient = 0
-        cmp     #1,R12
-        jeq      ones
-        cmp     #2,R12
-        jeq      tens
-        cmp     #3,R12
-        jeq     hundreds
-        cmp     #0,R12
-        jeq     otherRegister
-        jmp     thousands
+seperate:                               ; Subroutine used for seperating the 
+                                        ; results found in R14 and R15 (if any) 
+        mov     #3,R12                  ; R12 serves as a counter for seperating
+                                        ; each digit. At first it removes whats 
+                                        ; inside R15
+        mov     #0,R11                  ; R11 serves as a counter for seperating
+                                        ; 6 digits
+    loop:                               ; Lable used for looping
+        dec     R12                     ; Decrements by 1 meaning seperate to 
+                                        ; the next lower tenses 
+        mov     #0, R9                  ; R9 = quotient = 0
+        cmp     #1,R12                  ; R12=1 means seperate by ones
+        jeq      ones                   ; Seperate ones
+        cmp     #2,R12                  ; R12=2 means seperate by tens
+        jeq      tens                   ; Seperate tens
+        cmp     #3,R12                  ; R12=2 means seperate by hundreds
+        jeq     hundreds                ; Seperate hundreds
+        cmp     #0,R12                  ; R12=0 means it's done seperating
+        jeq     otherRegister           ; Switch whats inside register R14 to R15
+                                        ; or it means that seperation is finished
+        jmp     thousands               ; R12=4 means seperate by thousands
         
-    otherRegister:
-        cmp     #6,R11
-        jeq     finished
-        mov     R14,R15
-        mov     #0,R14
-        mov     #5,R12
-        jmp     loop
+    otherRegister:                     
+        cmp     #6,R11                  ; R11=6 means that 6 digits where seperated
+        jeq     finished                ; Seperation of digits is completed 
+        mov     R14,R15                 ; Switch what is in R14 to R15
+        mov     #0,R14                  ; Clear R14 because the data is now on R15
+        mov     #5,R12                  ; R12=5 meaning that it should loop 4 
+                                        ; more times so we can seperate what is inside R14
+        jmp     loop                    ; Keep looping
     
-    ones:
-        mov     R15,R9
-        mov     #0,R15
-        jmp     loopDone
+    ones:                               ; If we are seperating the ones then
+        mov     R15,R9                  ; move R15 to R9 because its already in 
+                                        ; the tense form
+        mov     #0,R15                  ; Clear R15 for later use
+        jmp     pushDigit               ; Push the digit on the stack
 
-    tens:
-        mov     #10,R4
-        jmp     loopDigit
+    tens:                               ; If we are seperating the tens then
+        mov     #10,R4                  ; set R4 to 10 so we can subtract by tens
+        jmp     subWithTenses           ; Sub R15 at the specified tens
         
-    hundreds:
-        mov     #100,R4
-        jmp     loopDigit
+    hundreds:                           ; If we are seperating the hundreds then
+        mov     #100,R4                 ; set R4 to 100 so we can subtract by hundreds
+        jmp     subWithTenses           ; Sub R15 at the specified tens
         
-    thousands:
-        mov     #1000,R4
-        jmp     loopDigit
+    thousands:                          ; If we are seperating the thousands then
+        mov     #1000,R4                ; set R4 to 1000 so we can subtract by thousands
+        jmp     subWithTenses           ; Sub R15 at the specified tens
     
         
-    loopDigit:
-        cmp     R4,R15
-        jl      loopDone
-        sub     R4,R15
-        inc     R9
-        jmp     loopDigit 
+    subWithTenses:                      ; General subroutine to seperate digits
+                                        ; by the specified tens
+        cmp     R4,R15                  ; R4<R5 means that the number is a lower tens
+        jl      pushDigit               ; Push the digit to the stack
+        sub     R4,R15                  ; Sub R4-R15 by the specified tens
+        inc     R9                      ; Increment R9 by 1 meaning its the quotient
+        jmp     subWithTenses           ; Keep subtracting by the specified tens
     
-    loopDone:
-        push    R9
-        inc     R11
-        jmp     loop
+    pushDigit:                          ; Push digit on the stack for later use
+        push    R9                      ; Push R9 = quotient = seperated digit
+        inc     R11                     ; Increment R11 by 1 meaning we have 1 more saved digit
+        jmp     loop                    ; Restart the loop again
 
-    finished:
+    finished:                           ; Seperation of digits is completed
+      ; This is done to reverse the stack for proper display of the results
         pop     R12
         pop     R11
         pop     R10
@@ -539,143 +543,167 @@ seperate:
         push    R7
         push    R6
         push    R5
-        jmp     displayResults  
+        jmp     displayResults          ; Display results to the user
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayResults:
-        mov     #7,R10
+displayResults:                         ; Subroutine used for displaying the results
+        mov     #7,R10                  ; R10 represents the 6 digits we are going to display
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
-        mov     #0,R11
-        jmp     displayNextDigit
-    displayNextDigit:
-        dec     R10
-        cmp     #0,R10
-        jeq     resultsDone
-        pop     R9
-        cmp     #1,R11                          ; No mores zeros to the left
-        jge     noMoreLeftZeros                 ; of the number
-        cmp     #0,R9
-        jeq     displayNextDigit
-    noMoreLeftZeros:
-        inc     R11
-        cmp     #1,R11
-        jeq     displayFirstDigit
-        cmp     #2,R11
-        jeq     displaySecondDigit
-        cmp     #3,R11
-        jeq     displayThirdDigit
-        cmp     #4,R11
-        jeq     displayFourthDigit
-        cmp     #5,R11
-        jeq     displayFifthDigit
-        cmp     #6,R11
-        jeq     displaySixthDigit
+        mov     #0,R11                  ; R11 is used as a flag for if digit has 
+                                        ; 0 on the left side of the result, but 
+                                        ; it also serves as an indicator as to 
+                                        ; were to display the number
+    displayNextDigit:                   ; Lable used for looping the next digit to display
+        dec     R10                     ; Decrement R10 by 1 meaning a digit is
+                                        ; being displayed
+        cmp     #0,R10                  ; R10=0 it means that all digits have been displayed
+        jeq     resultsDone             ; Result has finally finished printing
+        pop     R9                      ; Pop the digit from the stack
+        cmp     #1,R11                  ; If R11 >= 1 then that means that their are
+        jge     noMoreLeftZeros         ; no mores zeros to the left of the number
+        cmp     #0,R9                   ; If R9=0 that means that a zero was
+        jeq     displayNextDigit        ; found on the left of the digit so skip
+    noMoreLeftZeros:                    ; No more zeros found on the left side
+        inc     R11                     ; Increment R11 by 1 to display the next
+                                        ; digit on the next display segment
+        cmp     #1,R11                  ; R11=1 means that the first display
+                                        ; segment can be used for displaying the digit
+        jeq     displayFirstDigit       ; Display digit on the first segment
+        cmp     #2,R11                  ; R11=2 means that the second display
+                                        ; segment can be used for displaying the digit
+        jeq     displaySecondDigit      ; Display digit on the second segment
+        cmp     #3,R11                  ; R11=3 means that the third display
+                                        ; segment can be used for displaying the digit
+        jeq     displayThirdDigit       ; Display digit on the third segment
+        cmp     #4,R11                  ; R11=4 means that the fourth display
+                                        ; segment can be used for displaying the digit
+        jeq     displayFourthDigit      ; Display digit on the fourth segment
+        cmp     #5,R11                  ; R11=5 means that the fifth display
+                                        ; segment can be used for displaying the digit
+        jeq     displayFifthDigit       ; Display digit on the fifth segment
+        cmp     #6,R11                  ; R11=6 means that the sixth display
+                                        ; segment can be used for displaying the digit
+        jeq     displaySixthDigit       ; Display digit on the sixth segment
         
-    displayFirstDigit:
-        call    #displayFirstSegment
-        cmp     #1,R13
-        jeq     displayNegative
-        jmp     displayNextDigit
+    displayFirstDigit:                  ; Display digit on the first segment
+        call    #displayFirstSegment    ; Call subroutine for displaying digit 
+                                        ; on the first segment display
+        cmp     #1,R13                  ; R13 represents a flag meaning if the
+                                        ; number is negative (1) or positive (0)
+        jeq     displayNegative         ; If it's a negative number then display
+                                        ; the negative sign
+        jmp     displayNextDigit        ; Go to the next digit for displaying
         
-    displaySecondDigit:
-        call    #displaySecondSegment
-        jmp     displayNextDigit
+    displaySecondDigit:                 ; Display digit on the second segment
+        call    #displaySecondSegment   ; Call subroutine for displaying digit 
+                                        ; on the second segment display
+        jmp     displayNextDigit        ; Go to the next digit for displaying
         
-    displayThirdDigit:
-        call    #displayThirdSegment
-        jmp     displayNextDigit
+    displayThirdDigit:                  ; Display digit on the Third segment
+        call    #displayThirdSegment    ; Call subroutine for displaying digit 
+                                        ; on the Third segment display
+        jmp     displayNextDigit        ; Go to the next digit for displaying
         
-    displayFourthDigit:
-        call    #displayFourthSegment
-        jmp     displayNextDigit  
+    displayFourthDigit:                 ; Display digit on the Fourth segment
+        call    #displayFourthSegment   ; Call subroutine for displaying digit 
+                                        ; on the Fourth segment display
+        jmp     displayNextDigit        ; Go to the next digit for displaying
         
-    displayFifthDigit:
-        call    #displayFifthSegment
-        jmp     displayNextDigit 
+    displayFifthDigit:                  ; Display digit on the Fifth segment
+        call    #displayFifthSegment    ; Call subroutine for displaying digit 
+                                        ; on the Fifth segment display
+        jmp     displayNextDigit        ; Go to the next digit for displaying
         
-    displaySixthDigit:
-        call    #displaySixthSegment
-        jmp     displayNextDigit 
+    displaySixthDigit:                  ; Display digit on the Sixth segment
+        call    #displaySixthSegment    ; Call subroutine for displaying digit 
+                                        ; on the Sixth segment display
+        jmp     displayNextDigit        ; Go to the next digit for displaying
         
-    resultsDone:
-        jmp     mainLoop
+    resultsDone:                        ; Result has finally finished printing
+        jmp     mainLoop                ; Keep waiting for user input
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayNegative:
-        bis.b   #4,&0x0A29+1
-        jmp     displayNextDigit
+displayNegative:                        ; Display the negative sign found on the
+                                        ; first segment display
+        bis.b   #4,&0x0A29+1            ; Code used for turning on the - sign on
+                                        ; the first segment display
+        jmp     displayNextDigit        ; Go to the next digit for displaying
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayNumber:
-        cmp     #0,R8
-        jeq     displayFirstSegment
-        cmp     #1,R8
-        jeq     displaySecondSegment
-        cmp     #2,R8
-        jeq     displayThirdSegment
-        cmp     #3,R8
-        jeq     displayOperation
-        cmp     #4,R8
-        jeq     displayFirstSegment
-        cmp     #5,R8
-        jeq     displaySecondSegment
-        cmp     #6,R8
-        jeq     displayThirdSegment
+displayNumber:                          ; Subroutine used for displaying numbers
+                                        ; based on the state the program is in
+        cmp     #0,R8                   ; If R8 is at state 0 then display the 
+        jeq     displayFirstSegment     ; number on the first segment display
+        cmp     #1,R8                   ; If R8 is at state 1 then display the
+        jeq     displaySecondSegment    ; number on the second segment display
+        cmp     #2,R8                   ; If R8 is at state 2 then display the
+        jeq     displayThirdSegment     ; number on the third segment display
+        cmp     #3,R8                   ; If R8 is at state 3 then display the
+        jeq     displayOperation        ; Operation on the first segment display
+        cmp     #4,R8                   ; If R8 is at state 4 then display the
+        jeq     displayFirstSegment     ; number on the first segment display
+        cmp     #5,R8                   ; If R8 is at state 5 then display the
+        jeq     displaySecondSegment    ; number on the second segment display
+        cmp     #6,R8                   ; If R8 is at state 6 then display the
+        jeq     displayThirdSegment     ; number on the third segment display
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayOperation:
+displayOperation:                       ; Display the operation based on R9
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
-        mov.b   operH(R9),&0x0A29
-        mov.b   operL(R9),&0x0A29+1
-        ret
+        mov.b   operH(R9),&0x0A29       ; R9 represents the position fo the list
+                                        ; of hexadecimal numbers that represents
+        mov.b   operL(R9),&0x0A29+1     ; the operations such as +,-,*,/
+        ret                             ; Display done
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayError:
+displayError:                           ; This display an error message when
+                                        ; user decides to devide by 0
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
-        mov     #0,R9
-        mov.b   errorH(R9),&0x0A29
-        mov.b   errorL(R9),&0x0A29+1
-        mov     #1,R9
-        mov.b   errorH(R9),&0x0A25
-        mov.b   errorL(R9),&0x0A25+1
-        mov     #1,R9
-        mov.b   errorH(R9),&0x0A23
-        mov.b   errorL(R9),&0x0A23+1
-        mov     #2,R9
-        mov.b   errorH(R9),&0x0A32
-        mov.b   errorL(R9),&0x0A32+1
-        mov     #1,R9
-        mov.b   errorH(R9),&0x0A2E
-        mov.b   errorL(R9),&0x0A2E+1
-        jmp     mainLoop
+        mov     #0,R9                   ; R9 represents the position of the list
+        mov.b   errorH(R9),&0x0A29      ; Display the letter E
+        mov.b   errorL(R9),&0x0A29+1    ; Display the letter E
+        mov     #1,R9                   ; R9 represents the position of the list
+        mov.b   errorH(R9),&0x0A25      ; Display the letter R
+        mov.b   errorL(R9),&0x0A25+1    ; Display the letter R
+        mov     #1,R9                   ; R9 represents the position of the list
+        mov.b   errorH(R9),&0x0A23      ; Display the letter R
+        mov.b   errorL(R9),&0x0A23+1    ; Display the letter R
+        mov     #2,R9                   ; R9 represents the position of the list
+        mov.b   errorH(R9),&0x0A32      ; Display the letter O
+        mov.b   errorL(R9),&0x0A32+1    ; Display the letter O
+        mov     #1,R9                   ; R9 represents the position of the list
+        mov.b   errorH(R9),&0x0A2E      ; Display the letter R
+        mov.b   errorL(R9),&0x0A2E+1    ; Display the letter R
+        jmp     mainLoop                ; Keep waiting for user input
 
 // Objetivo:
 // Precondiciones:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayFirstSegment:
-        mov.b   digitH(R9),&0x0A29
+displayFirstSegment:                    ; Soubroutine used for displaying on the
+                                        ; first segment display
+        mov.b   digitH(R9),&0x0A29      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A29+1
         ret
 
@@ -684,8 +712,9 @@ displayFirstSegment:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displaySecondSegment:
-        mov.b   digitH(R9),&0x0A25
+displaySecondSegment:                   ; Soubroutine used for displaying on the
+                                        ; first segment display
+        mov.b   digitH(R9),&0x0A25      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A25+1
         ret
 
@@ -694,8 +723,9 @@ displaySecondSegment:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayThirdSegment:
-        mov.b   digitH(R9),&0x0A23
+displayThirdSegment:                    ; Soubroutine used for displaying on the
+                                        ; first segment display
+        mov.b   digitH(R9),&0x0A23      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A23+1
         ret
 
@@ -704,9 +734,10 @@ displayThirdSegment:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayFourthSegment:
-        mov.b   digitH(R9),&0x0A32
-        mov.b   digitL(R9),&0x0A32+1
+displayFourthSegment:                   ; Soubroutine used for displaying on the
+                                        ; first segment display
+        mov.b   digitH(R9),&0x0A32      ; Display the high byte of digitH at position R9
+        mov.b   digitL(R9),&0x0A32+1    ; Display the low byte of digitL at position R9
         ret
 
 // Objetivo:
@@ -714,9 +745,10 @@ displayFourthSegment:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displayFifthSegment:
-        mov.b   digitH(R9),&0x0A2E
-        mov.b   digitL(R9),&0x0A2E+1
+displayFifthSegment:                    ; Soubroutine used for displaying on the
+                                        ; first segment display
+        mov.b   digitH(R9),&0x0A2E      ; Display the high byte of digitH at position R9
+        mov.b   digitL(R9),&0x0A2E+1    ; Display the low byte of digitL at position R9
         ret
 
 // Objetivo:
@@ -724,9 +756,10 @@ displayFifthSegment:
 // Postcondiciones:
 // Autor:
 // Fecha:
-displaySixthSegment:
-        mov.b   digitH(R9),&0x0A27
-        mov.b   digitL(R9),&0x0A27+1
+displaySixthSegment:                    ; Soubroutine used for displaying on the
+                                        ; first segment display
+        mov.b   digitH(R9),&0x0A27      ; Display the high byte of digitH at position R9
+        mov.b   digitL(R9),&0x0A27+1    ; Display the low byte of digitL at position R9
         ret
 
 fin:    JMP $                           ; jump to current location '$'
