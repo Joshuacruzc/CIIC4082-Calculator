@@ -252,11 +252,11 @@ doTheMath:                              ; Mathimatical brain of the application
         cmp     #0,R9                   ; R9=0 means the operation chosen is dev
         jeq     devNumbers              ; Call the dev operation
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Tomar digitos individuales de ambos números y guardar número en un solo registro
+// Precondiciones: R5, R6, R7 contienen los digitos del primer número en orden. Mientras que R10,R11, y R12 contienen los digitos del segundo número en orden
+// Postcondiciones: R14 contiene el primer número y R15 contiene el segundo número
+// Autor: Joshua Cruz Cintrón
+// Fecha: 13/marzo/2021
 combineDigits:                          ; Subroutine for combining digits
     firstDigitCombine:   
         cmp     #0,R5
@@ -289,11 +289,11 @@ combineDigits:                          ; Subroutine for combining digits
         add     R12, R15                ; This will add the last digit to R15
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Es número suma los 2 números y guarda el resultado en R14
+// Precondiciones: R14 y R15 contienen los 2 números respectivamente
+// Postcondiciones: R14 contiene el resultado de la suma
+// Autor: Joshua Cruz Cintróm
+// Fecha: 13/marzo/2021
 addNumbers:                             ; Operation for adding 2 numbers
         add     R15,R14                 ; Adds numbers in R14 and R15 and
                                         ; stores the result in R14
@@ -303,11 +303,11 @@ addNumbers:                             ; Operation for adding 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Multiplicar los 2 números y guardarlo en 1 registro, o 2 de ser necesario
+// Precondiciones: R14 y R15 contienen los 2 números respectivamente
+// Postcondiciones: R14 contiene hasta las centenas del número, y R15 contiene los digitos por encima de mil
+// Autor: Joshua Cruz Cintrón
+// Fecha: 14/marzo/2021
 mulNumbers:                             ; Operation for multiplying 2 numbers
         cmp     #0,R15                  ; Check if the R15 = 0
         jeq     display0                ; If R15 = 0 then result = 0 
@@ -334,21 +334,21 @@ mulNumbers:                             ; Operation for multiplying 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Restarle mil a R14 y añadirle 1 a R15 para representar números de más de 3 dígitos usando 2 registros
+// Precondiciones: R14 es igual a mil, R15 contiene los "miles" del número que se está calculando
+// Postcondiciones: R14 es igual a 0, a R15 se le suma 1
+// Autor: Joshua Cruz Cintrón
+// Fecha: 14/marzo/2021
 multReachedThousand:                    ; Save that thousand on R15
         sub     #10000,R14              ; Sub 1000-R14 so we can move that to R15
         inc     R15                     ; Increment 1 meaning the first thousand
         jmp     multLoop                ; Go back to multiplying
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Intercambiar los 2 números de registros
+// Precondiciones: R14 contiene el número menor
+// Postcondiciones: R14 contiene el número mayor
+// Autor: Joshua Cruz Cintrón
+// Fecha: 14/marzo/2021
 multSwitchNumbers:                      ; Invert the data on both R14 and R15
         push     R15                    ; Pushed to the stack so we dont 
                                         ; override the data
