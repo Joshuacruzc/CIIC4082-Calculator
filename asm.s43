@@ -39,11 +39,12 @@ main:   nop                             ; main program
         bis     #1,&LCDCCTL0            ; Turn LCD on
         bic     #LOCKLPM5,&PM5CTL0      ; Disable the GPIO power-on by default
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Set up calculator variables (Registors) and inistialize the display
+// Precondiciones:Registors 5-7 = first 3 digits, R8 = state of app, R9 = number/operation
+// Registors 10-12 = second 3 digits, R14 = first number, R14 = second number
+// Postcondiciones:N/A
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 setupCalc:
         mov     #0,R5                   ; Represents the first number the
                                         ; user has inputted 
@@ -67,11 +68,11 @@ setupCalc:
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         call    #displayNumber          ; Display 0 to the user
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: This is the brains of the calculator that manages everything
+// Precondiciones: N/A
+// Postcondiciones: N/A
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 mainLoop:                               ; The brains of the application
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
         cmp     #4,R4                   ; Compare if its the left button
@@ -124,11 +125,11 @@ mainLoop:                               ; The brains of the application
                                         ; we reset to display the next number
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Display numbers 1-9
+// Precondiciones: R8 must be less than 3
+// Postcondiciones: R9 is incremented by 1 and then displays the number
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 nextNumber:                             ; Loops through numbers 0-9
         cmp     #9,R9                   ; Resets the number back to 0 meaning
         jeq     resetNumber             ; the user has accidentaly missed the 
@@ -137,21 +138,21 @@ nextNumber:                             ; Loops through numbers 0-9
         call    #displayNumber          ; Display the new number to the user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Reset the number back to 0
+// Precondiciones: R9 must be 9
+// Postcondiciones: Changes R9 to 0 and displays the number
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 resetNumber:                            ; Resets the number back to 0
         mov     #0,R9                   ; Number is set back to 0
         call    #displayNumber          ; Display the new number to the user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Changes the state of the program to the next state and decides what to do next
+// Precondiciones: R4 bust be 2
+// Postcondiciones: increment R8 by one
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 nextState:                              ; Moves to the next state of the application
         push    R9                      ; Save the number in the stack
         mov     #0,R9                   ; Reset R9
@@ -164,11 +165,11 @@ nextState:                              ; Moves to the next state of the applica
         call    #displayNumber          ; Display the next digit to the user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Loops through each operation and displays it to the user
+// Precondiciones: R8 bust be 3 (Third state)
+// Postcondiciones: Increments R9 that represents the operation 
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 nextOperation:                          ; Loops through operations +,-,*,/
         cmp     #3,R9                   ; Resets the number back to 0 meaning
         jeq     resetOperation          ; the user has accidentaly missed the 
@@ -177,21 +178,22 @@ nextOperation:                          ; Loops through operations +,-,*,/
         call    #displayOperation       ; Display the next operation to the user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subroutine used for reverting back to the plus operation
+// Precondiciones: R9 must be 3
+// Postcondiciones: Changes R9 to 0 and displays the operation
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 resetOperation:                         ; Reset operation back to +
         mov     #0,R9                   ; Number is set back to 0
         call    #displayOperation       ; Display the next operation to the user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: This subroutine saves the operation to a stack and proceeds
+// to display the number 0 on the screen
+// Precondiciones: R4 must be 2 meaning the user has pressed the right button
+// Postcondiciones: calls displayNumber and displays the number 0 to the user
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 operationSelected:                      ; User has decided the operation
         inc     R8                      ; Increment to the next state
         push    R9                      ; Save the operation in the stack
@@ -199,11 +201,11 @@ operationSelected:                      ; User has decided the operation
         call    #displayNumber          ; Display 0 to the user
         jmp mainLoop                    ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subroutine used for checking if the user is still holding down the button
+// Precondiciones: If R4 = 4 or 2 then keep looping
+// Postcondicione: Else wait for delay and end subroutine
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 stillHoldDown:                          ; User is still holding down the button
         mov.b   &P1IN,R4                ; Copy into R4 P1IN's byte
         and.b   #00000110B,R4           ; Compares which button is being pressed
@@ -216,11 +218,11 @@ stillHoldDown:                          ; User is still holding down the button
         call    #delay                  ; Delay to help combat button bouncing
         ret                             ; User has finally let go of the button
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subroutine use to add delay for the application
+// Precondiciones: N/A
+// Postcondiciones: N/A
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 delay:                                  ; Used to help against button bouncing
         mov     #0x2710,R13             ; Represents the delay to wait for
                                         ; button bouncing
@@ -229,11 +231,11 @@ delay:                                  ; Used to help against button bouncing
         jnz     decrement               ; Keep Looping until delay = 0
         ret                             ; Delay finished
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subroutine thats in charge of determining what operation to do
+// Precondiciones: R8 must be 7 that means that the application is now on the 7th state
+// Postcondiciones: Operation is chosen based on R9
+// Autor: Daniel A. Crespo 
+// Fecha:11/Mar/2021
 doTheMath:                              ; Mathimatical brain of the application
         pop     R12                     ; Least significant digit of second number
         pop     R11                     ; Second significant digit of second number
@@ -252,11 +254,12 @@ doTheMath:                              ; Mathimatical brain of the application
         cmp     #0,R9                   ; R9=0 means the operation chosen is dev
         jeq     devNumbers              ; Call the dev operation
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Tomar digitos individuales de ambos números y guardar número en un solo registro
+// Precondiciones: R5, R6, R7 contienen los digitos del primer número en orden.
+// Mientras que R10,R11, y R12 contienen los digitos del segundo número en orden
+// Postcondiciones: R14 contiene el primer número y R15 contiene el segundo número
+// Autor: Joshua Cruz Cintrón
+// Fecha: 13/marzo/2021
 combineDigits:                          ; Subroutine for combining digits
     firstDigitCombine:   
         cmp     #0,R5
@@ -289,11 +292,11 @@ combineDigits:                          ; Subroutine for combining digits
         add     R12, R15                ; This will add the last digit to R15
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Es número suma los 2 números y guarda el resultado en R14
+// Precondiciones: R14 y R15 contienen los 2 números respectivamente
+// Postcondiciones: R14 contiene el resultado de la suma
+// Autor: Joshua Cruz Cintróm
+// Fecha: 13/marzo/2021
 addNumbers:                             ; Operation for adding 2 numbers
         add     R15,R14                 ; Adds numbers in R14 and R15 and
                                         ; stores the result in R14
@@ -303,11 +306,12 @@ addNumbers:                             ; Operation for adding 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo: 
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Multiplicar los 2 números y guardarlo en 1 registro, o 2 de ser necesario
+// Precondiciones: R14 y R15 contienen los 2 números respectivamente
+// Postcondiciones: R14 contiene hasta las centenas del número, y R15 contiene
+// los digitos por encima de mil
+// Autor: Joshua Cruz Cintrón
+// Fecha: 14/marzo/2021
 mulNumbers:                             ; Operation for multiplying 2 numbers
         cmp     #0,R15                  ; Check if the R15 = 0
         jeq     display0                ; If R15 = 0 then result = 0 
@@ -334,21 +338,23 @@ mulNumbers:                             ; Operation for multiplying 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Restarle mil a R14 y añadirle 1 a R15 para representar números de
+// más de 3 dígitos usando 2 registros
+// Precondiciones: R14 es igual a mil, R15 contiene los "miles" del número que
+// se está calculando
+// Postcondiciones: R14 es igual a 0, a R15 se le suma 1
+// Autor: Joshua Cruz Cintrón
+// Fecha: 14/marzo/2021
 multReachedThousand:                    ; Save that thousand on R15
         sub     #10000,R14              ; Sub 1000-R14 so we can move that to R15
         inc     R15                     ; Increment 1 meaning the first thousand
         jmp     multLoop                ; Go back to multiplying
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Intercambiar los 2 números de registros
+// Precondiciones: R14 contiene el número menor
+// Postcondiciones: R14 contiene el número mayor
+// Autor: Joshua Cruz Cintrón
+// Fecha: 14/marzo/2021
 multSwitchNumbers:                      ; Invert the data on both R14 and R15
         push     R15                    ; Pushed to the stack so we dont 
                                         ; override the data
@@ -403,30 +409,32 @@ devNumbers:                             ; Operation for deviding 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Displays the number 0 on the screen meaning that is the final
+// answer of that operation
+// Precondiciones: R14 must be 0
+// Postcondiciones: Display the number 0 on the screen
+// Autor: Daniel A. Crespo 
+// Fecha:14/Mar/2021
 ceroIsOnNumerator:                      ; Cero is on numerator meaning result=0
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         call    #displayFirstSegment    ; Display number to user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subroutine used for calling another subroutine named displayError
+// meaning that the denominator is 0 which can not be calculated when dividing
+// Precondiciones: R15 must be 0
+// Postcondiciones: call displayError subroutine to dispay an error message to the user
+// Autor: Daniel A. Crespo 
+// Fecha:14/Mar/2021
 ceroIsOnDenominator:                    ; Cero is on denominator meaning an error
         call    #displayError           ; Display error to user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Muestra un cero en el primer segmento
+// Precondiciones: R9 representa el numero a ser mostrado
+// Postcondiciones: R9 siempre ser cero al final
+// Autor: Rey J. Cotto
+// Fecha: 13/03/21
 display0:                               ; Display the number 0 to the user
         mov     #0,R9                   ; R9 represents the number to be printed
         call    displayFirstSegment     ; Display the number on the first segment
@@ -468,22 +476,27 @@ sepDigSub:                              ; Checks if R14 is negative
         jeq     seperate                ; R14 is a positive number
         jmp     applyNegative           ; R14 is a negative number
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina que crea un flag al R13 representando si el numero
+// calculado es positivo o negativo
+// Precondiciones: R14 must be a negative number
+// Postcondiciones: R13 will contain 1 meaning that the number is negative
+// Autor: Abdiel Cortes
+// Fecha: 14/Marzo/2021
 applyNegative: 
         inv     R14                     ; Convert R14 to positive, first invert everything,
         inc     R14                     ; Then add 1
         mov     #1,R13                  ; Add negative flag
         jmp     seperate                ; Seperate the digits
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Seperate the result found on both R14 and R15 into individual digits
+// Precondiciones: Some value has to be stored at least in R14, R12 is needed 
+// as a counter for digits, R11 is needed as a counto for how many are in the
+// stack, R9 is needed for saving the seperated digit from result, R4 is needed
+// for subtracting the result by the specified tens
+// Postcondiciones: The stack will have the results seperated by digits in oder 
+// of most significant to least significant digit
+// Autor: Daniel A. Crespo 
+// Fecha:15/Mar/202
 seperate:                               ; Subroutine used for seperating the 
                                         ; results found in R14 and R15 (if any) 
         mov     #3,R12                  ; R12 serves as a counter for seperating
@@ -563,11 +576,12 @@ seperate:                               ; Subroutine used for seperating the
         push    R5
         jmp     displayResults          ; Display results to the user
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar los numeros resultantes en la
+// pantalla, en su posicion adecuada
+// Precondiciones: R10 representa el numero resultante
+// Postcondiciones: El numero va a estar mostrado en la pantalla
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayResults:                         ; Subroutine used for displaying the results
         mov     #7,R10                  ; R10 represents the 6 digits we are going to display
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
@@ -644,22 +658,23 @@ displayResults:                         ; Subroutine used for displaying the res
     resultsDone:                        ; Result has finally finished printing
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar el signo negativo
+// Precondiciones: El negative flag fue activado y entro a la subrutina
+// Postcondiciones: El simbolo de negativo esta mostrado en la pantalla
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayNegative:                        ; Display the negative sign found on the
                                         ; first segment display
         bis.b   #4,&0x0A29+1            ; Code used for turning on the - sign on
                                         ; the first segment display
         jmp     displayNextDigit        ; Go to the next digit for displaying
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar los numeros no finales,
+// en su posicion adecuada
+// Precondiciones: R8 representa el estado del programa
+// Postcondiciones: Alguna subrutina va a ser llamada al final como resultado de esta
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayNumber:                          ; Subroutine used for displaying numbers
                                         ; based on the state the program is in
         cmp     #0,R8                   ; If R8 is at state 0 then display the 
@@ -677,11 +692,11 @@ displayNumber:                          ; Subroutine used for displaying numbers
         cmp     #6,R8                   ; If R8 is at state 6 then display the
         jeq     displayThirdSegment     ; number on the third segment display
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Mostrar la operacion a computar en la pantalla
+// Precondiciones: R9 representa la posicion en la lista
+// Postcondiciones: El simbolo va a ser mostrado en la pantalla
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayOperation:                       ; Display the operation based on R9
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         mov.b   operH(R9),&0x0A29       ; R9 represents the position fo the list
@@ -689,11 +704,12 @@ displayOperation:                       ; Display the operation based on R9
         mov.b   operL(R9),&0x0A29+1     ; the operations such as +,-,*,/
         ret                             ; Display done
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo:Mostrar un mensaje de error al usuario
+// Precondiciones: R15 tiene que ser igual a 0 que significa que se esta 
+// dividiendo un numero entre 0
+// Postcondiciones: Desplegar un mensaje de error en el display
+// Autor: Daniel A. Crespo 
+// Fecha:13/Mar/2021
 displayError:                           ; This display an error message when
                                         ; user decides to devide by 0
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
@@ -714,66 +730,66 @@ displayError:                           ; This display an error message when
         mov.b   errorL(R9),&0x0A2E+1    ; Display the letter R
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el primer segmento del LCD
+// Precondiciones: R9 contiene la posicion a ser mostrada
+// Postcondiciones: Se estara mostrando lo indicado en el primer segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayFirstSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A29      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A29+1
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el segundo segmento del LCD
+// Precondiciones: R9 contiene la posicion a ser mostrada
+// Postcondiciones: Se estara mostrando lo indicado en el segundo segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displaySecondSegment:                   ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A25      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A25+1
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el tercer segmento del LCD
+// Precondiciones: R9 contiene la posicion a ser mostrada
+// Postcondiciones: Se estara mostrando lo indicado en el tercer segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayThirdSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A23      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A23+1
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el cuarto segmento del LCD
+// Precondiciones: R9 contiene la posicionon a ser mostrada
+// Postcondiciones: Se estara mostrando lo indicado en el cuarto segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayFourthSegment:                   ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A32      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A32+1    ; Display the low byte of digitL at position R9
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el quinto segmento del LCD
+// Precondiciones: R9 contiene la posicion a ser mostrada
+// Postcondiciones: Se estara mostrando lo indicado en el quinto segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayFifthSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A2E      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A2E+1    ; Display the low byte of digitL at position R9
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el sexto segmento del LCD
+// Precondiciones: R9 contiene la posicion a ser mostrada
+// Postcondiciones: Se estara mostrando lo indicado en el sexto segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displaySixthSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A27      ; Display the high byte of digitH at position R9
