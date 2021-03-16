@@ -416,11 +416,11 @@ ceroIsOnDenominator:                    ; Cero is on denominator meaning an erro
         call    #displayError           ; Display error to user
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Muestra un cero en el primer segmento
+// Precondiciones: R9 representa el número a ser mostrado
+// Postcondiciones: R9 siempre será cero al final
+// Autor: Rey J. Cotto
+// Fecha: 13/03/21
 display0:                               ; Display the number 0 to the user
         mov     #0,R9                   ; R9 represents the number to be printed
         call    displayFirstSegment     ; Display the number on the first segment
@@ -545,11 +545,11 @@ seperate:                               ; Subroutine used for seperating the
         push    R5
         jmp     displayResults          ; Display results to the user
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar los números resultantes en la pantalla, en su posición adecuada
+// Precondiciones: R10 representa el número resultante
+// Postcondiciones: El número va a estar mostrado en la pantalla
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayResults:                         ; Subroutine used for displaying the results
         mov     #7,R10                  ; R10 represents the 6 digits we are going to display
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
@@ -626,22 +626,22 @@ displayResults:                         ; Subroutine used for displaying the res
     resultsDone:                        ; Result has finally finished printing
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar el signo negativo
+// Precondiciones: El negative flag fue activado y entró a la subrutina
+// Postcondiciones: El simbolo de negativo está mostrado en la pantalla
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayNegative:                        ; Display the negative sign found on the
                                         ; first segment display
         bis.b   #4,&0x0A29+1            ; Code used for turning on the - sign on
                                         ; the first segment display
         jmp     displayNextDigit        ; Go to the next digit for displaying
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar los números no finales, en su posición adecuada
+// Precondiciones: R8 representa el estado del programa
+// Postcondiciones: Alguna subrutina va a ser llamada al final como resultado de esta
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayNumber:                          ; Subroutine used for displaying numbers
                                         ; based on the state the program is in
         cmp     #0,R8                   ; If R8 is at state 0 then display the 
@@ -659,11 +659,11 @@ displayNumber:                          ; Subroutine used for displaying numbers
         cmp     #6,R8                   ; If R8 is at state 6 then display the
         jeq     displayThirdSegment     ; number on the third segment display
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Mostrar la operación a computar en la pantalla
+// Precondiciones: R9 representa la posición en la lista
+// Postcondiciones: El símbolo va a ser mostrado en la pantalla
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayOperation:                       ; Display the operation based on R9
         mov     #2,&LCDCMEMCTL          ; Clear LCD memory
         mov.b   operH(R9),&0x0A29       ; R9 represents the position fo the list
@@ -671,10 +671,10 @@ displayOperation:                       ; Display the operation based on R9
         mov.b   operL(R9),&0x0A29+1     ; the operations such as +,-,*,/
         ret                             ; Display done
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
+// Objetivo: 
+// Precondiciones: 
+// Postcondiciones: 
+// Autor: 
 // Fecha:
 displayError:                           ; This display an error message when
                                         ; user decides to devide by 0
@@ -696,66 +696,66 @@ displayError:                           ; This display an error message when
         mov.b   errorL(R9),&0x0A2E+1    ; Display the letter R
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el primer segmento del LCD
+// Precondiciones: R9 contiene la posición a ser mostrada
+// Postcondiciones: Se estará mostrando lo indicado en el primer segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayFirstSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A29      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A29+1
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el segundo segmento del LCD
+// Precondiciones: R9 contiene la posición a ser mostrada
+// Postcondiciones: Se estará mostrando lo indicado en el segundo segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displaySecondSegment:                   ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A25      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A25+1
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el tercer segmento del LCD
+// Precondiciones: R9 contiene la posición a ser mostrada
+// Postcondiciones: Se estará mostrando lo indicado en el tercer segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayThirdSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A23      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A23+1
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el cuarto segmento del LCD
+// Precondiciones: R9 contiene la posición a ser mostrada
+// Postcondiciones: Se estará mostrando lo indicado en el cuarto segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayFourthSegment:                   ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A32      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A32+1    ; Display the low byte of digitL at position R9
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el quinto segmento del LCD
+// Precondiciones: R9 contiene la posición a ser mostrada
+// Postcondiciones: Se estará mostrando lo indicado en el quinto segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displayFifthSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A2E      ; Display the high byte of digitH at position R9
         mov.b   digitL(R9),&0x0A2E+1    ; Display the low byte of digitL at position R9
         ret
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Subrutina diseñada para mostrar en el sexto segmento del LCD
+// Precondiciones: R9 contiene la posición a ser mostrada
+// Postcondiciones: Se estará mostrando lo indicado en el sexto segmento
+// Autor: Rey J. Cotto
+// Fecha: 14/03/21
 displaySixthSegment:                    ; Soubroutine used for displaying on the
                                         ; first segment display
         mov.b   digitH(R9),&0x0A27      ; Display the high byte of digitH at position R9

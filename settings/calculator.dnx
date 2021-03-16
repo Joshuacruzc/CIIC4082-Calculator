@@ -50,4 +50,7 @@
         <Count>0</Count>
         <SuppressDialog>0</SuppressDialog>
     </Aliases>
+    <DebugChecksum>
+        <Checksum>1348593766</Checksum>
+    </DebugChecksum>
 </settings>
