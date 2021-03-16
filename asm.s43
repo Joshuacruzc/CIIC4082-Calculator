@@ -303,7 +303,7 @@ addNumbers:                             ; Operation for adding 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
+// Objetivo: 
 // Precondiciones:
 // Postcondiciones:
 // Autor:
@@ -356,11 +356,14 @@ multSwitchNumbers:                      ; Invert the data on both R14 and R15
         pop      R14                    ; Retrieve the data from the stack
         ret                             ; Swapping done
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Tomar el valor almacenado en R14 y restarlo con el valor almacenado 
+// en R15; el resultado se guarda en R14 (R14 = R14 - R15).
+// Precondiciones: En R14 esta almacenado el primer numero en binario y en R15 
+// esta almacenado el segundo numero en binario.
+// Postcondiciones: El resultado de la resta estara almacenado en R14 
+// en formato 2s complement y R15 siempre sera 0.
+// Autor: Abdiel Cortes
+// Fecha: 13/Marzo/2021
 subNumbers:                             ; Operation for subtracting 2 numbers
         sub     R15, R14                ; R14 = R14 - R15
         mov     #0,R15                  ; Set R15 to 0 because we need it later
@@ -369,11 +372,14 @@ subNumbers:                             ; Operation for subtracting 2 numbers
         jmp     seperateDigits          ; Seperate the digits into diferent registers
         jmp     mainLoop                ; Keep waiting for user input
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Tomar el valor almacenado en R14 y dividirlo con el valor almacenado 
+// en R15; el resultado se guarda en R14 (R14 = R14 / R15).
+// Precondiciones: En R14 esta almacenado el primer numero en binario y en R15 
+// esta almacenado el segundo numero en binario.
+// Postcondiciones: El resultado de la division estara almacenado en R14 y en R5;
+// R15 siempre sera 0.
+// Autor: Abdiel Cortes
+// Fecha: 13/Marzo/2021
 devNumbers:                             ; Operation for deviding 2 numbers
         cmp     #0,R15                  ; Check if the denominator is 0
         jeq     ceroIsOnDenominator     ; If 0 then show error
@@ -426,21 +432,33 @@ display0:                               ; Display the number 0 to the user
         call    displayFirstSegment     ; Display the number on the first segment
         jmp     mainLoop                ; Keep waiting for user input 
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Separar en digitos decimales el numero binario almacenado en R14 
+// (o para el caso de la multiplicacion en R14 y R15).
+// Precondiciones: Para el caso de la suma y division, se encuentra el resultado 
+// en binario almacenado en R14. Para la resta el resultado se encuentra almacenado en R14 
+// en formato binario 2s complement. Para la multiplicacion el resultado se encuentra
+// en los registros R14 y R15; los 3 digitos mas significativos en R15 y los 3 digitos
+// menos significativos en R14. En R9 se encuentra un valor que te dice que tipo
+// de operacion se llevo a cabo (suma=1, resta=2, multiplicacion=3, division=0).
+// Postcondiciones: Los digitos decimales se encontraran en formato binario almacenado
+// en los registros R5, R6, R7, R10, R11 y R12; donde R5 es el digito menos significativo
+// y R12 es el digito mas significativo. Si el resultado es un numero negativo, 
+// entonces se almacenara 1 en R13.
+//     ejemplo: -123
+//     R5 = 3, R6 = 2, R7 = 1, R10 = junk, R11 = junk, R12 = junk, R13 = 1
+// Autor: Abdiel Cortes
+// Fecha: 14/Marzo/2021
 seperateDigits:                         ; Separeates R14 into its decimal components
         cmp     #2, R9                  ; Subtraction, always 3 digits, but sometimes
         jeq     sepDigSub               ; it's negative so we have to account for that
         jmp     seperate                ; Any other operation gets seperated the same way
 
-// Objetivo:
-// Precondiciones:
-// Postcondiciones:
-// Autor:
-// Fecha:
+// Objetivo: Verificar si el resultado de la resta fue un numero negativo.
+// Precondiciones: En R14 se encuentra el resultado en binario 2s complement.
+// Postcondiciones: Si el numero es positivo se llamara la subrutina seperate.
+// Si el numero es negativo se llamara la subrutina applyNegative.
+// Autor: Abdiel Cortes
+// Fecha: 14/Marzo/2021
 sepDigSub:                              ; Checks if R14 is negative
         push    R14                     ; Store R14 in stack
         and     #1000000000000000b, R14 ; Apply bit mask
